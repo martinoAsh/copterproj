@@ -9,14 +9,8 @@
 #define BLUETOOTH_H_
 
 
-/** setup_UART
-*
-* @brief Activates GPIO ports needed for UART
-*
-* @param[] void;
-*
-* @return int
-*/
+extern void send_data(char *data, size_t size);
+
 int setup_UART();
 
 #endif /* BLUETOOTH_H_ */

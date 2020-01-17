@@ -155,7 +155,7 @@ typedef enum EK_TM4C1294XL_SPIName {
  */
 typedef enum EK_TM4C1294XL_UARTName {
     EK_TM4C1294XL_UART0 = 0,
-
+    EK_TM4C1294XL_UART6,
     EK_TM4C1294XL_UARTCOUNT
 } EK_TM4C1294XL_UARTName;
 
@@ -205,6 +205,8 @@ typedef enum EK_TM4C1294XL_WiFiName {
  *  This includes:
  *     - Enable clock sources for peripherals
  */
+#include <stdint.h>
+
 extern uint32_t EK_TM4C1294XL_initGeneral(uint32_t sysclock);
 
 /*!

@@ -700,7 +700,7 @@ const UART_Config UART_config[] = {
 
 /* UART objects */
 UARTTiva_Object uartTivaObjects[EK_TM4C1294XL_UARTCOUNT];
-unsigned char uartTivaRingBuffer[32];
+unsigned char uartTivaRingBuffer[2][32];
 
 /* UART configuration structure */
 const UARTTiva_HWAttrs uartTivaHWAttrs[EK_TM4C1294XL_UARTCOUNT] = {
@@ -709,8 +709,16 @@ const UARTTiva_HWAttrs uartTivaHWAttrs[EK_TM4C1294XL_UARTCOUNT] = {
         .intNum = INT_UART0,
         .intPriority = ~0,
         .flowControl = UART_FLOWCONTROL_NONE,
-        .ringBufPtr  = uartTivaRingBuffer,
-        .ringBufSize = sizeof(uartTivaRingBuffer)
+        .ringBufPtr  = uartTivaRingBuffer[0],
+        .ringBufSize = sizeof(uartTivaRingBuffer[0])
+    },
+    {/* EK_TM4C1294XL_UART6 */
+        .baseAddr = UART6_BASE,
+        .intNum = INT_UART6,
+        .intPriority = ~0,
+        .flowControl = UART_FLOWCONTROL_NONE,
+        .ringBufPtr  = uartTivaRingBuffer[1],
+        .ringBufSize = sizeof(uartTivaRingBuffer[1])
     }
 };
 
@@ -719,6 +727,11 @@ const UART_Config UART_config[] = {
         &UARTTiva_fxnTable,
         &uartTivaObjects[0],
         &uartTivaHWAttrs[0]
+    },
+    {
+        &UARTTiva_fxnTable,
+        &uartTivaObjects[1],
+        &uartTivaHWAttrs[1]
     },
     {NULL, NULL, NULL}
 };
@@ -730,10 +743,10 @@ const UART_Config UART_config[] = {
 void EK_TM4C1294XL_initUART(void)
 {
     /* Enable and configure the peripherals used by the uart. */
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
-    GPIOPinConfigure(GPIO_PA0_U0RX);
-    GPIOPinConfigure(GPIO_PA1_U0TX);
-    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART6);
+    GPIOPinConfigure(GPIO_PP0_U6RX);
+    GPIOPinConfigure(GPIO_PP1_U6TX);
+    GPIOPinTypeUART(GPIO_PORTP_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     /* Initialize the UART driver */
 #if TI_DRIVERS_UART_DMA

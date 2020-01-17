@@ -54,7 +54,7 @@
 #include <joystick.h>
 
 int main(void)
-          {
+{
     //Clock auf 120MHZ setzen
     SysCtlClockFreqSet(SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN | SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480, 120000000);
 
