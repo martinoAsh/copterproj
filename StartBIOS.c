@@ -73,11 +73,17 @@ int main(void)
 
     setup_UART();
 
+    EdM_ADC_Init();
+    System_printf("Setting up ADC for Joystick Done\n");
+    System_flush();
+
+    setUpJoyStick_Task();
+    System_printf("Set up Joystick Task\n");
+    System_flush();
 
     //SysMin will only print to the console upon calling flush or exit8*
-//    System_printf("Start BIOS\n");
-//    System_flush();
-
     //Start BIOS
     BIOS_start();
+    System_printf("Start BIOS\n");
+    System_flush();
 }
