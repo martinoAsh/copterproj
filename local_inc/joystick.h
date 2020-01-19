@@ -27,38 +27,29 @@
  * @typedef     raw_rc_frame
 */
 typedef struct raw_rc_frame {
-    uint16_t roll;            /**<  16 bit Range [1000;2000] */
-    uint16_t pitch;           /**<  16 bit Range [1000;2000] */
-    uint16_t throttle;        /**<  16 bit Range [1000;2000] */
-    uint16_t azimuth;         /**<  16 bit Range [1000;2000] */
-    uint8_t arm;              /**<  */
+    uint16_t roll;
+    uint16_t pitch;
+    uint16_t throttle;
+    uint8_t arm;
 }raw_rc_frame;
 
 /*!
  * --------------------------------------------------------------- defines --
  */
-#define JOYS_GPIO_BASE GPIO_PORTE_BASE
-#define JOYS_ADC_BASE ADC0_BASE
-#define JOYS_TIMER_BASE TIMER0_BASE
+#define JS_GPIO_BASE GPIO_PORTE_BASE
+#define JS_ADC_BASE ADC0_BASE
+#define JS_TIMER_BASE TIMER0_BASE
 
-#define JOYS_SAMPLE_RATE 4
+#define JS_SAMPLE_RATE 4
 
-#define JOYS_X GPIO_PIN_4
-#define JOYS_Y GPIO_PIN_3
-#define JOYS_CH_X ADC_CTL_CH9
-#define JOYS_CH_Y ADC_CTL_CH0
+#define JS_X        GPIO_PIN_4
+#define JS_Y        GPIO_PIN_3
+#define JS_CH_X     ADC_CTL_CH9
+#define JS_CH_Y     ADC_CTL_CH0
 
-
-#define JOyACC_X GPIO_PIN_0
-#define JOyACC_Y GPIO_PIN_1
-#define JOyACC_Z GPIO_PIN_2
-
-#define JOyACC_ADC_BASE ADC1_BASE
-
-#define JOyACC_CH_X ADC_CTL_CH3
-#define JOyACC_CH_Y ADC_CTL_CH2
-#define JOyACC_CH_Z ADC_CTL_CH1
-
+#define JS_UP       EDUMKII_BUTTON1
+#define JS_DOWN     EDUMKII_BUTTON2
+#define JS_ARM      EDUMKII_SELECT
 
 /*
  * Gt All the stuffs for the ADC ready for the TI EDUMIKI Joystick Controller
@@ -68,12 +59,6 @@ typedef struct raw_rc_frame {
  * */
 extern void EdM_ADC_Init(void);
 extern void setUpJoyStick_Task();
-
-/*
- * Getting the Joystick Display working to display some qcopter data.
- * */
-//extern void initSPI(void);
-//extern void send_to_Screen(char data);
 
 #endif /* LOCAL_INC_JOYSTICK_H_ */
 

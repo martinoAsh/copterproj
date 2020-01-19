@@ -296,6 +296,14 @@ GPIO_PinConfig gpioPinConfigs[] = {
     GPIOTiva_PN_1 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
     /* EK_TM4C1294XL_USR_D2 */
     GPIOTiva_PN_0 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
+
+    /* Input pins for EDUMKII*/
+    /* EDUMKII_BUTTON1 */
+    GPIOTiva_PL_1 | GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_RISING,
+    /* EDUMKII_BUTTON2 */
+    GPIOTiva_PL_2 | GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_RISING,
+    /* EDUMKII_SELECT */
+    GPIOTiva_PC_6 | GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_RISING
 };
 
 /*
@@ -307,7 +315,10 @@ GPIO_PinConfig gpioPinConfigs[] = {
  */
 GPIO_CallbackFxn gpioCallbackFunctions[] = {
     NULL,  /* EK_TM4C1294XL_USR_SW1 */
-    NULL   /* EK_TM4C1294XL_USR_SW2 */
+    NULL,   /* EK_TM4C1294XL_USR_SW2 */
+    NULL,   /* EK_TM4C1294XL_PL1 (EDUMKII_BUTTON1) */
+    NULL,   /* EK_TM4C1294XL_PL1 (EDUMKII_BUTTON2) */
+    NULL    /* EK_TM4C1294XL_PL1 (EDUMKII_SELECT) */
 };
 
 /* The device-specific GPIO_config structure */

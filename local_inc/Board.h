@@ -59,6 +59,10 @@ extern "C" {
 #define Board_BUTTON0               EK_TM4C1294XL_USR_SW1
 #define Board_BUTTON1               EK_TM4C1294XL_USR_SW2
 
+#define EDUMKII_BUTTON1             EK_TM4C1294XL_PL1
+#define EDUMKII_BUTTON2             EK_TM4C1294XL_PL2
+#define EDUMKII_SELECT              EK_TM4C1294XL_PC6
+
 #define Board_I2C0                  EK_TM4C1294XL_I2C7
 #define Board_I2C1                  EK_TM4C1294XL_I2C8
 #define Board_I2C2                  EK_TM4C1294XL_I2C0

@@ -39,7 +39,7 @@ raw_rc_frame frame;
 
 
 void joystick_fnx(UArg arg0 );
-void set_flight_controls();
+//void set_flight_controls();
 void arm();
 void disarm();
 
@@ -89,36 +89,25 @@ void EdM_ADC_Init(void)
      *
      * This will be used later for locking the Qcopter Position or the Joystick
      * */
-    //GPIO_setCallback(Board_EduMIKI_SEL, gpioSeLFxn0);
-    //GPIO_enableInt(Board_EduMIKI_SEL);
+    GPIO_setCallback(JS_ARM, gpioSeLFxn0);
+    GPIO_enableInt(JS_ARM);
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
 
-    GPIOPinTypeADC(JOYS_GPIO_BASE, JOYS_X | JOYS_Y | JOyACC_X |JOyACC_Y | JOyACC_Z );
+    GPIOPinTypeADC(JS_GPIO_BASE, JS_X | JS_Y);
 
-    ADCClockConfigSet(JOYS_ADC_BASE| JOyACC_ADC_BASE , ADC_CLOCK_SRC_PIOSC | ADC_CLOCK_RATE_EIGHTH, 1);
-    ADCHardwareOversampleConfigure(JOYS_ADC_BASE | JOyACC_ADC_BASE ,64); // each sample in the ADC FIFO will be the result of 64 measurements being averaged together
+    ADCClockConfigSet(JS_ADC_BASE , ADC_CLOCK_SRC_PIOSC | ADC_CLOCK_RATE_EIGHTH, 1);
+    ADCHardwareOversampleConfigure(JS_ADC_BASE , 64); // each sample in the ADC FIFO will be the result of 64 measurements being averaged together
 
+    ADCSequenceDisable(JS_ADC_BASE, 1);
 
+    ADCSequenceConfigure(JS_ADC_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
 
-    ADCSequenceDisable(JOYS_ADC_BASE, 1);
-    ADCSequenceDisable(JOyACC_ADC_BASE, 2); //ACC
+    ADCSequenceStepConfigure(JS_ADC_BASE, 1, 0, JS_CH_X);
+    ADCSequenceStepConfigure(JS_ADC_BASE, 1, 1, JS_CH_Y | ADC_CTL_IE | ADC_CTL_END);
 
+    ADCSequenceEnable(JS_ADC_BASE, 1);
 
-    ADCSequenceConfigure(JOYS_ADC_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
-    ADCSequenceConfigure(JOyACC_ADC_BASE, 2, ADC_TRIGGER_PROCESSOR, 0);
-
-    ADCSequenceStepConfigure(JOYS_ADC_BASE, 1, 0, JOYS_CH_X);
-    ADCSequenceStepConfigure(JOYS_ADC_BASE, 1, 1, JOYS_CH_Y | ADC_CTL_IE | ADC_CTL_END);
-
-    //For ACC
-    ADCSequenceStepConfigure(JOyACC_ADC_BASE, 2, 0, JOyACC_CH_X);
-    ADCSequenceStepConfigure(JOyACC_ADC_BASE, 2, 1, JOyACC_CH_Y);
-    ADCSequenceStepConfigure(JOyACC_ADC_BASE, 2, 2, JOyACC_CH_Z | ADC_CTL_IE | ADC_CTL_END);
-
-    ADCSequenceEnable(JOYS_ADC_BASE, 1);
-    ADCSequenceEnable(JOyACC_ADC_BASE, 2);
 }
 
 /*!
@@ -168,14 +157,9 @@ void joystick_fnx(UArg arg0 )
     static uint32_t ui32JoyX = 0;
     static uint32_t ui32JoyY = 0;
 
-    //static uint32_t ui32AccX = 0; --> not needed at the moment
-    //static uint32_t ui32AccY = 0;
-    //static uint32_t ui32AccZ = 0; --> not needed at the moment
-
     frame.throttle = 1000;
     frame.roll = 1500;
     frame.pitch = 1500;
-    frame.azimuth = 1500;
 
     while (1)
     {
@@ -191,82 +175,17 @@ void joystick_fnx(UArg arg0 )
             //Delay a bit and read the ADC1
             SysCtlDelay(200);
 
-            ADCIntClear(JOyACC_ADC_BASE, 2);
-            ADCProcessorTrigger(JOyACC_ADC_BASE, 2);
-            while (!ADCIntStatus(JOyACC_ADC_BASE, 2, false))
-            {
-            }
-            ADCSequenceDataGet(JOyACC_ADC_BASE, 2, &adcSamples[2]);
-
             ui32JoyX = adcSamples[0];
             ui32JoyY = adcSamples[1];
-
-            //ui32AccX = adcSamples[2]; --> not needed at the moment
-            //ui32AccY = adcSamples[3];
-            //ui32AccZ = adcSamples[4]; --> not needed at the moment
 
             System_printf("Joystick X-Axis: %u Y-Axis: %u\n",ui32JoyX,ui32JoyY);
             System_flush();
 
-            if(ui32JoyX < 1000)
-            {
-                frame.pitch = frame.pitch - 10;
-                if(frame.pitch < 1000)
-                {
-                    frame.pitch = 1000;
-                }
-            }
-            else if(ui32JoyX > 3500)
-            {
-                frame.pitch = frame.pitch + 10;
-                if(frame.pitch > 2000)
-                {
-                    frame.pitch = 2000;
-                }
-            }
-
-            if(ui32JoyY < 1000)
-            {
-                frame.roll = frame.roll - 10;
-                if(frame.roll < 1000)
-                {
-                    frame.roll = 1000;
-                }
-            }
-            else if(ui32JoyY > 3500)
-            {
-                frame.roll = frame.roll + 10;
-                if(frame.roll > 2000)
-                {
-                    frame.roll = 2000;
-                }
-            }
-/*
-            if(ui32AccY > 2500)
-            {
-                frame.throttle = frame.throttle + 5;
-                if(frame.throttle > 2000)
-                    frame.throttle = 2000;
-            }
-            else if(ui32AccY < 1500)
-            {
-                frame.throttle = frame.throttle - 5;
-                if(frame.throttle < 1000)
-                    frame.throttle = 1000;
-            }
-            set_flight_controls();
-*/
-        //}
         Task_sleep(1000);
     }
 }
 
-/*!
- * @brief     To stop the quadcopter  spinning
- *
- *@param       void    nothing
- *@result
- * */
+
 void arm()
 {
     System_printf("Arming\n");
@@ -277,12 +196,6 @@ void arm()
 
 }
 
-/*!
- * @brief     To start the quadcopter  spinning
- *
- *@param       void    nothing
- *@result
- * */
 void disarm()
 {
     System_printf("DisArming\n");
@@ -290,67 +203,3 @@ void disarm()
     frame.arm = 0; //DEFAULT
 
 }
-
-/*!
- * @brief     Create a multi-wii packet from the controller
- *            values to control the quadcopter. send the
- *            payload to quadcopter via the Bluetooth module.
- *
- *@param       void    nothing
- *@result
- * */
-
-void set_flight_controls(){
-
-    uint8_t armdata[2];
-    int i;
-    // limit to [1000:2000] range
-    if (frame.roll > 2000){frame.roll = 2000;}
-    if (frame.roll < 1000){frame.roll = 1000;}
-    if (frame.pitch > 2000){frame.pitch = 2000;}
-    if (frame.pitch < 1000){frame.pitch = 1000;}
-    if (frame.arm == 0){armdata[0] = 0xd0; armdata[1] = 0x07;}
-    else {armdata[0] = 0xe8; armdata[1] = 0x03;}
-    if (frame.throttle > 2000){frame.throttle = 2000;}
-    if (frame.throttle < 1000){frame.throttle = 1000;}
-
-    uint8_t payload_size = 16;
-
-    char payload[payload_size];
-    payload[0] = 0x24; // $
-    payload[1] = 0x4D; // M
-    payload[2] = 0x3C; // >
-    payload[3] = 0x0A; // size of data
-    payload[4] = 0xC8; // cmd (200 for setting RC)
-
-    payload[5] = frame.pitch;
-    payload[6] = (frame.pitch>>8);
-    payload[7] = frame.roll;
-    payload[8] = (frame.roll>>8);
-    payload[9] = frame.throttle;
-    payload[10] = (frame.throttle>>8);
-    payload[11] = frame.azimuth;
-    payload[12] = (frame.azimuth>>8);
-    payload[13] = armdata[0];
-    payload[14] = armdata[1];
-
-    char checksum = 0;
-    for (i = 3; i < 15; i++)
-    {
-        checksum ^= payload[i];
-    }
-    payload[15] = checksum;
-
-    System_printf("pitch: %d\n", frame.pitch);
-    System_flush();
-    System_printf("roll: %d\n", frame.roll);
-    System_flush();
-    System_printf("throttle: %d\n", frame.throttle);
-    System_flush();
-    System_printf("azimuth: %d\n", frame.azimuth);
-    System_flush();
-
-
-    //send_pac(payload, sizeof(payload));
-}
-
