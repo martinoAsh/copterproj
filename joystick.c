@@ -11,27 +11,11 @@
 #include <joystick.h>
 #include <bluetooth.h>
 
-#include "driverlib/debug.h"
-#include "driverlib/sysctl.h"
-
-#include "inc/hw_types.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/adc.h"
-
-#include <ti/sysbios/BIOS.h>
-#include <ti/sysbios/knl/Event.h>
 #include <ti/sysbios/knl/Task.h>
-
-#include <xdc/cfg/global.h>
 #include <xdc/runtime/System.h>
-#include <xdc/runtime/Error.h>
-#include <xdc/runtime/Memory.h>
-#include "inc/hw_memmap.h"
-//#include "driverlib/gpio.h"
-
-//#include <ti/sysbios/knl/Event.h>
 #include <ti/drivers/GPIO.h>
-//#include <driverlib/sysctl.h>
 #include <Board.h>
 
 static Bool isArmed = false;
@@ -182,15 +166,15 @@ void joystick_fnx(UArg arg0 )
     //System_printf("Joystick X: %u Joystick Y: %u\n", adcSamples[0],adcSamples[1]);
     //System_flush();
 
-    offsetRoll = 2000 - adcSamples[0];
-    offsetPitch = 2000 - adcSamples[1];
+    offsetRoll = 2000 - adcSamples[1];
+    offsetPitch = 2000 - adcSamples[0];
 
     //System_printf("offset Joystick X: %i offset Joystick Y: %i\n", offsetRoll,offsetPitch);
     //System_flush();
 
     while (1)
     {
-        Task_sleep(10);
+        Task_sleep(50);
         if(bluetooth_ready == 0)
         {
             continue;
@@ -202,7 +186,7 @@ void joystick_fnx(UArg arg0 )
         }
         ADCSequenceDataGet(ADC0_BASE, 1, adcSamples);
 
-        roll = (adcSamples[0] + offsetRoll) / 4  + 1000;
+        roll = (adcSamples[1] + offsetRoll) / 4  + 1000;
 
         if(roll < 1000)
         {
@@ -213,7 +197,7 @@ void joystick_fnx(UArg arg0 )
             roll = 2000;
         }
 
-        pitch = (adcSamples[1] + offsetPitch) / 4  + 1000;
+        pitch = (adcSamples[0] + offsetPitch) / 4  + 1000;
 
         if(pitch < 1000)
         {
@@ -224,8 +208,8 @@ void joystick_fnx(UArg arg0 )
             pitch = 2000;
         }
 
-        System_printf("Joystick X-Axis: %u Y-Axis: %u\n",roll,pitch);
-        System_flush();
+        //System_printf("Joystick X-Axis: %u Y-Axis: %u\n",roll,pitch);
+        //System_flush();
 
         send_controls(roll,pitch,throttle,isArmed);
     }

@@ -5,18 +5,12 @@
  *      Author: Martin
  */
 
-//#define TARGET_IS_TM4C129_RA2 /* Tells rom.h the version of the silicon */
-
 #include <stdint.h> /* C99 header for uint*_t types */
 #include <stdbool.h> /* Driverlib headers require stdbool.h to be included fiGPIO_PIN_4 */
 #include <driverlib/gpio.h> /* Supplies GPIO* functions and GPIO_PIN_x */
 #include <driverlib/pin_map.h>
-#include <driverlib/rom.h> /* Supplies ROM_* variations of functions */
-#include <driverlib/sysctl.h> /* Supplies SysCtl* functions and SYSCTL_* macros */
 #include <driverlib/uart.h>
 #include <inc/hw_memmap.h> /* Supplies GPIO_PORTx_BASE */
-
-#include <xdc/runtime/System.h>
 
 /*Board Header files */
 #include <Board.h>
@@ -27,12 +21,13 @@
 #include <ti/drivers/UART.h>
 
 /* BIOS Header files */
-#include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
 
 #include <string.h>
 
+/* XDCtools Header files */
 #include <xdc/runtime/Error.h>
+#include <xdc/runtime/System.h>
 
 #include <bluetooth.h>
 
