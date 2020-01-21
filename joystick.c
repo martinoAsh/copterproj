@@ -9,6 +9,7 @@
  * -------------------------------------------------------------- includes --
  */
 #include <joystick.h>
+#include <bluetooth.h>
 
 #include "driverlib/debug.h"
 #include "driverlib/sysctl.h"
@@ -33,15 +34,11 @@
 #include <driverlib/sysctl.h>
 #include <Board.h>
 
-static Bool qpArmToggle = false;
-raw_rc_frame frame;
-//extern uint8_t ready_for_data;
-
+static Bool isArmed = false;
+static uint16_t throttle = 1000;
+extern uint8_t bluetooth_ready;
 
 void joystick_fnx(UArg arg0 );
-//void set_flight_controls();
-void arm();
-void disarm();
 
 
 /*!
@@ -54,23 +51,38 @@ void disarm();
  *
  *@result      Nothing
  * */
-void gpioSeLFxn0(unsigned int index)
+void setArm(unsigned int index)
 {
     // JoyStick Select Button
     //
-        System_printf("JoyStick Select Pressed......\n");
-        System_flush();
 
-        if(qpArmToggle == false)
+        if(isArmed == false)
         {
-            qpArmToggle = true;
-            disarm();
+            isArmed = true;
         }
         else
         {
-            qpArmToggle = false;
-            arm();
+            isArmed = false;
         }
+}
+
+void throttleUp(unsigned int index)
+{
+    throttle = throttle + 10;
+    if(throttle > 2000)
+    {
+        throttle = 2000;
+    }
+}
+
+void throttleDown(unsigned int index)
+{
+
+    throttle = throttle - 10;
+    if(throttle < 1000)
+    {
+        throttle = 1000;
+    }
 }
 
 /*!
@@ -83,14 +95,15 @@ void gpioSeLFxn0(unsigned int index)
  * */
 void EdM_ADC_Init(void)
 {
-    /*
-     * Center of the Joystick is a normal Button
-     * Set it up
-     *
-     * This will be used later for locking the Qcopter Position or the Joystick
-     * */
-    GPIO_setCallback(JS_ARM, gpioSeLFxn0);
+
+    GPIO_setCallback(JS_ARM, setArm);
     GPIO_enableInt(JS_ARM);
+
+    GPIO_setCallback(JS_UP, throttleUp);
+    GPIO_enableInt(JS_UP);
+
+    GPIO_setCallback(JS_DOWN, throttleDown);
+    GPIO_enableInt(JS_DOWN);
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
 
@@ -153,53 +166,62 @@ void setUpJoyStick_Task(void)
  * */
 void joystick_fnx(UArg arg0 )
 {
-    uint32_t adcSamples[6];
-    static uint32_t ui32JoyX = 0;
-    static uint32_t ui32JoyY = 0;
+    uint32_t adcSamples[2];
+    static uint32_t ui32offsetroll = 0;
+    static uint32_t ui32offsetpitch = 0;
 
-    frame.throttle = 1000;
-    frame.roll = 1500;
-    frame.pitch = 1500;
+    throttle = 1000;
+    static uint32_t roll = 1500;
+    static uint32_t pitch = 1500;
+
+    ADCIntClear(ADC0_BASE, 1);
+    ADCProcessorTrigger(ADC0_BASE, 1);
+    while (!ADCIntStatus(ADC0_BASE, 1, false))
+    {
+    }
+    ADCSequenceDataGet(ADC0_BASE, 1, adcSamples);
+
+    ui32offsetroll = adcSamples[0] - 2000;
+    ui32offsetpitch = adcSamples[1] - 2000;
 
     while (1)
     {
-        //if(ready_for_data != 0)
-        //{
-            ADCIntClear(ADC0_BASE, 1);
-            ADCProcessorTrigger(ADC0_BASE, 1);
-            while (!ADCIntStatus(ADC0_BASE, 1, false))
-            {
-            }
-            ADCSequenceDataGet(ADC0_BASE, 1, adcSamples);
+        Task_sleep(10);
+        if(bluetooth_ready == 0)
+        {
+            continue;
+        }
+        ADCIntClear(ADC0_BASE, 1);
+        ADCProcessorTrigger(ADC0_BASE, 1);
+        while (!ADCIntStatus(ADC0_BASE, 1, false))
+        {
+        }
+        ADCSequenceDataGet(ADC0_BASE, 1, adcSamples);
+/*
+        if((adcSamples[0] - 500 + ui32offsetroll) > 0)
+        {
+        ui32roll = (adcSamples[0] - 500 + ui32offsetroll);
+        }
+        else
+        {
+            ui32roll = 1000;
+        }
+        if((adcSamples[1] - 500 + ui32offsetpitch) > 0)
+        {
+        ui32pitch = (adcSamples[1] - 500 + ui32offsetpitch);
+        }
+        else
+        {
+            ui32pitch = 1000;
+        }
 
-            //Delay a bit and read the ADC1
-            SysCtlDelay(200);
+        if(ui32roll > 2000){ui32roll = 2000;}
 
-            ui32JoyX = adcSamples[0];
-            ui32JoyY = adcSamples[1];
+        if(ui32pitch > 2000){ui32pitch = 2000;}
 
-            System_printf("Joystick X-Axis: %u Y-Axis: %u\n",ui32JoyX,ui32JoyY);
-            System_flush();
-
-        Task_sleep(1000);
+        System_printf("Joystick X-Axis: %u Y-Axis: %u\n",ui32roll,ui32pitch);
+        System_flush();
+*/
+        send_controls(roll,pitch,throttle,isArmed);
     }
-}
-
-
-void arm()
-{
-    System_printf("Arming\n");
-    System_flush();
-
-    // the sequence value of arm to be armed
-    frame.arm = 1;
-
-}
-
-void disarm()
-{
-    System_printf("DisArming\n");
-    System_flush();
-    frame.arm = 0; //DEFAULT
-
 }

@@ -21,18 +21,6 @@
 #include <xdc/runtime/Error.h>
 #include <ti/sysbios/knl/Event.h>
 
-//#include <RN4678.h>
-
-/*!
- * @typedef     raw_rc_frame
-*/
-typedef struct raw_rc_frame {
-    uint16_t roll;
-    uint16_t pitch;
-    uint16_t throttle;
-    uint8_t arm;
-}raw_rc_frame;
-
 /*!
  * --------------------------------------------------------------- defines --
  */
