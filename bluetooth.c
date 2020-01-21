@@ -39,10 +39,14 @@ uint8_t bluetooth_ready = 0;
 
 void send_data(char *data, size_t size)
 {
+    //D4 is to activate uart?
     GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_4, GPIO_PIN_4);
+    //Read P5 --- P5 is to read UART?
     while(GPIOPinRead(GPIO_PORTP_BASE, GPIO_PIN_5) != 0x00);
     UART_write(uart, data, size);
     while(UARTBusy(UART6_BASE));
+
+    //Set D4 0
     GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_4, 0);
 }
 
@@ -81,28 +85,32 @@ void send_controls(uint16_t roll, uint16_t pitch, uint16_t throttle, bool armed)
 
 void send_command(char *cmd, uint8_t cmdSize, uint8_t returnSize, char *returnVal)
 {
-    char inp[16] = { '\0' };
+    char uartReturn[16] = { '\0' };
 
     //TODO: check return value
+    //Set D4 high -> writing to uart
     GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_4, GPIO_PIN_4);
 
+    //P5 must be 0
     while(GPIOPinRead(GPIO_PORTP_BASE, GPIO_PIN_5) != 0x00)
     {}
 
     //TODO: check return value
     UART_write(uart, cmd, cmdSize);
 
+    //wait until finished
     while(UARTBusy(UART6_BASE))
     {}
 
+    //set D4 low
     GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_4, 0);
 
     //TODO: check return value
-    UART_read(uart, &inp, returnSize);
-    strcpy(returnVal, inp);
+    UART_read(uart, &uartReturn, returnSize);
+    strcpy(returnVal, uartReturn);
 
-    System_printf("sent command: %s\n", cmd);
-    System_printf("got return: %s\n", returnVal);
+//    System_printf("sent command: %s\n", cmd);
+//    System_printf("got return: %s\n", returnVal);
 
     System_flush();
     Task_sleep(5);
@@ -137,6 +145,7 @@ int connect_to_copter()
     //    }
 
     // wait for connected status
+    //Q0 AND Q3 must be HIGH
     while((GPIOPinRead(GPIO_PORTQ_BASE, GPIO_PIN_0) != 0x00) || (GPIOPinRead(GPIO_PORTQ_BASE, GPIO_PIN_3) == 0x00));
     System_printf("Connected\n");
     System_flush();
@@ -149,6 +158,7 @@ int connect_to_copter()
     while(UARTCharsAvail(UART6_BASE))
     {
         //TODO: check return value
+        //read all chars in uart
         UART_read(uart, &returnVal, 1);
     }
 
@@ -169,6 +179,7 @@ void UART_Task(UArg arg0, UArg arg1)
     uartParams.baudRate = 115200;
     uartParams.readMode = UART_MODE_BLOCKING;
 
+    //set global uart handler
     uart = UART_open(Board_UART6, &uartParams);
 
     if (uart == NULL)
@@ -196,36 +207,50 @@ void UART_Task(UArg arg0, UArg arg1)
 //TODO: docu
 void set_Pins()
 {
-    //TODO: explanation what PINS are for
-    // Status Pins
+    //Q0 + Q3 = Status Pins of bluetooth module?
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOQ);
+
+    //Q0
     GPIOPinTypeGPIOInput(GPIO_PORTQ_BASE, GPIO_PIN_0);
+    //Q3
     GPIOPinTypeGPIOInput(GPIO_PORTQ_BASE, GPIO_PIN_3);
 
-    // CTS/RTS
+    // CTS/RTS -- for reading and writing uart?
+    //P5 to read from uart?
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);
     GPIOPinTypeGPIOInput(GPIO_PORTP_BASE, GPIO_PIN_5);
+
+    //D4 to activate writing to uart?
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
     GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, GPIO_PIN_4);
+
+    //set D4 0
     GPIOPadConfigSet(GPIO_PORTD_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
     GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_4, 0);
 
-    // SW_BTN
+    // SW_BTN -- D2 - just for startup of bluetooth module
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
     GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, GPIO_PIN_2);
     GPIOPadConfigSet(GPIO_PORTD_BASE, GPIO_PIN_2, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+
+    //Set D2 0
     GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_2, 0);
 
     // RST_N
+    //P4 - just for startup of bluetooth module?
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);
     GPIOPinTypeGPIOOutput(GPIO_PORTP_BASE, GPIO_PIN_4);
     GPIOPadConfigSet(GPIO_PORTP_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+
+    //Set P4 high
     GPIOPinWrite(GPIO_PORTP_BASE, GPIO_PIN_4, GPIO_PIN_4);
 
     // WAKE_UP
+    //M7
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);
     GPIOPinTypeGPIOOutput(GPIO_PORTM_BASE, GPIO_PIN_7);
     GPIOPadConfigSet(GPIO_PORTM_BASE, GPIO_PIN_7, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+    //set M7 high = WAKE_UP
     GPIOPinWrite(GPIO_PORTM_BASE, GPIO_PIN_7, GPIO_PIN_7);
 }
 
@@ -234,17 +259,22 @@ void init_bt_module()
 {
     // init sequence
      SysCtlDelay((120000000 / 1000) * 500);
+     //P4 low
      GPIOPinWrite(GPIO_PORTP_BASE, GPIO_PIN_4, 0);
      SysCtlDelay((120000000 / 1000) * 100);
+     //P4 high
      GPIOPinWrite(GPIO_PORTP_BASE, GPIO_PIN_4, GPIO_PIN_4);
      SysCtlDelay((120000000 / 1000) * 100);
+     //D2 high
      GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_2, GPIO_PIN_2);
      SysCtlDelay((120000000 / 1000) * 500);
 
      // wait for the correct status of the RN4678
+     //Q0 must be != 0 AND Q3 must be != 0
      while((GPIOPinRead(GPIO_PORTQ_BASE, GPIO_PIN_0) != 0x00) && (GPIOPinRead(GPIO_PORTQ_BASE, GPIO_PIN_3) != 0x00))
      {}
 
+     //why?
      SysCtlDelay((120000000 / 1000) * 500);
 }
 
@@ -253,15 +283,18 @@ int setup_UART()
     /*configure uart6 as interface to bluetooth module*/
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART6);
+
+    //P0 and P1 for uart6
     GPIOPinConfigure(GPIO_PP0_U6RX);
     GPIOPinConfigure(GPIO_PP1_U6TX);
     GPIOPinTypeUART(GPIO_PORTP_BASE, GPIO_PIN_1 | GPIO_PIN_0);
 
     UART_init();
 
-    //set necessary pins for initializing bluetooth module
+    //set necessary pins for initializing bluetooth module and writing/reading uart
     set_Pins();
 
+    //initialize bluetooth module
     init_bt_module();
 
     //Create the task
