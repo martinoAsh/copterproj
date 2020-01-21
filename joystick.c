@@ -5,9 +5,6 @@
  *      Author: Johannes Fritzsche
  */
 
-/*\include
- * -------------------------------------------------------------- includes --
- */
 #include <joystick.h>
 #include <bluetooth.h>
 
@@ -22,24 +19,13 @@ static Bool isArmed = false;
 static uint16_t throttle = 1000;
 extern uint8_t bluetooth_ready;
 
-void joystick_fnx(UArg arg0 );
+void joystick_fnx(UArg arg0);
 
-
-/*!
- * @brief      This is Joystick middle button.
- *             Using simple Interrupt for arm and disarm function
- *
- *@param       index    the button ID
- *
- * PNB:
- *
- *@result      Nothing
- * */
+/*
+ *  Interrupt for arming and disarming
+ */
 void setArm(unsigned int index)
 {
-    // JoyStick Select Button
-    //
-
         if(isArmed == false)
         {
             isArmed = true;
@@ -50,6 +36,9 @@ void setArm(unsigned int index)
         }
 }
 
+/*
+ *  Interrupt for adjusting the throttle up (+25 steps). Limit at 2000.
+ */
 void throttleUp(unsigned int index)
 {
     throttle = throttle + 25;
@@ -59,6 +48,9 @@ void throttleUp(unsigned int index)
     }
 }
 
+/*
+ *  Interrupt for adjusting the throttle down (-25 steps). Limit at 1000.
+ */
 void throttleDown(unsigned int index)
 {
 
@@ -69,19 +61,15 @@ void throttleDown(unsigned int index)
     }
 }
 
-/*!
- * @brief      Set up the GPIO port and pins for the ADC driver
- *             which is used to read the ADC value for the x, y-axis, and accelerometer values
- *             of the EDUMIKI Joystick controller
- *
- *@param       void    nothing
- *@result
- * */
+/*
+ *  Set up the GPIO port and pins for the ADC driver to read the ADC values for the x and y axis.
+ *  Set up the arm,up,and down buttons.
+ */
 void setup_ADC_edumkII(void)
 {
 
-    GPIO_setCallback(JS_ARM, setArm);
-    GPIO_enableInt(JS_ARM);
+    GPIO_setCallback(JS_ARM, setArm); //Associate a callback function with a particular GPIO pin interrupt.
+    GPIO_enableInt(JS_ARM); //Enables GPIO interrupts for the selected index to occur.
 
     GPIO_setCallback(JS_UP, throttleUp);
     GPIO_enableInt(JS_UP);
@@ -89,31 +77,29 @@ void setup_ADC_edumkII(void)
     GPIO_setCallback(JS_DOWN, throttleDown);
     GPIO_enableInt(JS_DOWN);
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0); //This function enables ADC0 peripheral.
+    while(SysCtlPeripheralReady(SYSCTL_PERIPH_ADC0) != true) //wait for ADC0 peripheral to be accessible
+    {
+    }
 
-    GPIOPinTypeADC(JS_GPIO_BASE, JS_X | JS_Y);
+    GPIOPinTypeADC(JS_GPIO_BASE, JS_PITCH | JS_ROLL); //Configures the EDUMKII joystick pins for use as analog-to-digital converter inputs.
 
-    ADCClockConfigSet(JS_ADC_BASE , ADC_CLOCK_SRC_PIOSC | ADC_CLOCK_RATE_EIGHTH, 1);
+    ADCClockConfigSet(JS_ADC_BASE , ADC_CLOCK_SRC_PIOSC | ADC_CLOCK_RATE_EIGHTH, 1); //Configure the ADC to use PIOSC divided by one (16 MHz) and sample at an eighth the rate.
     ADCHardwareOversampleConfigure(JS_ADC_BASE , 64); // each sample in the ADC FIFO will be the result of 64 measurements being averaged together
 
-    ADCSequenceDisable(JS_ADC_BASE, 1);
+    ADCSequenceDisable(JS_ADC_BASE, 1); //disable sample sequence before configuring it
+    ADCSequenceConfigure(JS_ADC_BASE, 1, ADC_TRIGGER_PROCESSOR, 0); //sample sequence 1 (up to 4 samples) with processor trigger
 
-    ADCSequenceConfigure(JS_ADC_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
+    //two sample sequence steps for pitch and roll potentiometer
+    ADCSequenceStepConfigure(JS_ADC_BASE, 1, 0, JS_CH_PITCH);
+    ADCSequenceStepConfigure(JS_ADC_BASE, 1, 1, JS_CH_ROLL | ADC_CTL_IE | ADC_CTL_END);
 
-    ADCSequenceStepConfigure(JS_ADC_BASE, 1, 0, JS_CH_X);
-    ADCSequenceStepConfigure(JS_ADC_BASE, 1, 1, JS_CH_Y | ADC_CTL_IE | ADC_CTL_END);
-
-    ADCSequenceEnable(JS_ADC_BASE, 1);
-
+    ADCSequenceEnable(JS_ADC_BASE, 1); //allows sample capture when triggered
 }
 
-/*!
- * @brief      Set up task for the Joystick controller with the hight
- *             task priority for fast pulling of the ADC values
- *
- *@param       void    nothing
- *@result
- * */
+/*
+ *  Set up task for the Joystick controller with the highest task priority for fast reading of the ADC values
+ */
 void setUpJoyStick_Task(void)
 {
 
@@ -124,7 +110,7 @@ void setUpJoyStick_Task(void)
 
     Task_Params_init(&old_taskParams);
     old_taskParams.stackSize = 2024; //Stacksize in bytes
-    old_taskParams.priority = 15; // 0-15, 15 being highest priority
+    old_taskParams.priority = 15; //0-15, 15 being highest priority
     old_taskParams.arg0 = (UArg) 1;
     old_taskHandle = Task_create((Task_FuncPtr) joystick_fnx, &old_taskParams, &eb);
 
@@ -134,25 +120,17 @@ void setUpJoyStick_Task(void)
     }
 }
 
-
-/*!
- * @brief      This is the joystick RTOS task, also used
- *             for processing joystick and button data. Scale and limit ADC values to range of 1000-2000.
- *             send roll,pitch,throttle,isArmed to
- *
- *@param       arg0   xdc argument for the RTOS task.
- *
- * PNB:
- *
- *@result      Nothing
- * */
-void joystick_fnx(UArg arg0 )
+/*
+ *  This is the joystick RTOS task, also used
+ *  for processing joystick and button data. Scale and limit ADC values to range of 1000-2000.
+ *  Send copter control data (roll,pitch,throttle,isArmed) to bluetooth.c to be packaged and sent to the copter.
+ */
+void joystick_fnx(UArg arg0)
 {
+    throttle = 1000;
     uint32_t adcSamples[2];
     static int16_t offsetRoll = 0;
     static int16_t offsetPitch = 0;
-
-    throttle = 1000;
     static uint16_t roll = 1500;
     static uint16_t pitch = 1500;
 
@@ -163,14 +141,9 @@ void joystick_fnx(UArg arg0 )
     }
     ADCSequenceDataGet(ADC0_BASE, 1, adcSamples);
 
-    //System_printf("Joystick X: %u Joystick Y: %u\n", adcSamples[0],adcSamples[1]);
-    //System_flush();
-
-    offsetRoll = 2000 - adcSamples[1];
-    offsetPitch = 2000 - adcSamples[0];
-
-    //System_printf("offset Joystick X: %i offset Joystick Y: %i\n", offsetRoll,offsetPitch);
-    //System_flush();
+    //calculate offset, while not touching joystick at the start
+    offsetRoll = 2000 - adcSamples[0];
+    offsetPitch = 2000 - adcSamples[1];
 
     while (1)
     {
@@ -186,8 +159,7 @@ void joystick_fnx(UArg arg0 )
         }
         ADCSequenceDataGet(ADC0_BASE, 1, adcSamples);
 
-        roll = (adcSamples[1] + offsetRoll) / 4  + 1000;
-
+        roll = (adcSamples[1] + offsetRoll) / 4  + 1000; //scale and limit adc roll value
         if(roll < 1000)
         {
             roll = 1000;
@@ -197,8 +169,7 @@ void joystick_fnx(UArg arg0 )
             roll = 2000;
         }
 
-        pitch = (adcSamples[0] + offsetPitch) / 4  + 1000;
-
+        pitch = (adcSamples[0] + offsetPitch) / 4  + 1000; //scale and limit adc pitch value
         if(pitch < 1000)
         {
             pitch = 1000;
@@ -208,9 +179,6 @@ void joystick_fnx(UArg arg0 )
             pitch = 2000;
         }
 
-        //System_printf("Joystick X-Axis: %u Y-Axis: %u\n",roll,pitch);
-        //System_flush();
-
-        send_controls(roll,pitch,throttle,isArmed);
+        send_controls(roll,pitch,throttle,isArmed); //send adc and button data to bluetooth.c
     }
 }
