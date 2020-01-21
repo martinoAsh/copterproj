@@ -70,6 +70,7 @@ int main(void)
     ui32SysClock = Board_initGeneral(120*1000*1000);
     (void)ui32SysClock;
     Board_initI2C();
+    Board_initGPIO();
 
     setup_UART();
 

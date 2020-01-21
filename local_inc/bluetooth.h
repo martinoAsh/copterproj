@@ -8,8 +8,7 @@
 #ifndef BLUETOOTH_H_
 #define BLUETOOTH_H_
 
-
-extern void send_data(char *data, size_t size);
+void send_controls(uint16_t roll, uint16_t pitch, uint16_t throttle, bool armed);
 
 int setup_UART();
 

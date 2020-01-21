@@ -36,44 +36,53 @@
 
 #include <bluetooth.h>
 
-//#define SW_BTN          GPIO_PIN_2
-//#define SW_BTN_PORT     GPIO_PORTD_BASE
-//#define RST             GPIO_PIN_4
-//#define RST_PORT        GPIO_PORTP_BASE
-//#define RN4678_RTS      GPIO_PIN_5      /**< is CTS from TivaBoard */
-//#define GPIO_PORTP_BASE GPIO_PORTP_BASE
-//#define GPIO_PIN_4      GPIO_PIN_4      /**< is RTS from TivaBoard   */
-//#define GPIO_PORTD_BASE GPIO_PORTD_BASE
-//#define U6RX            GPIO_PP0_U6RX
-//#define GPIO_PIN_0        GPIO_PIN_0
-//#define GPIO_PORTP_BASE       GPIO_PORTP_BASE
-//#define U6TX            GPIO_PP1_U6TX
-//#define U6TX_PIN        GPIO_PIN_1
-//#define GPIO_PORTP_BASE       GPIO_PORTP_BASE
-//#define GPIO_PIN_7          GPIO_PIN_7
-//#define GPIO_PORTM_BASE     GPIO_PORTM_BASE
-//#define GPIO_PIN_3         GPIO_PIN_3
-//#define GPIO_PORTQ_BASE    GPIO_PORTQ_BASE
-//#define GPIO_PIN_0         GPIO_PIN_0
-//#define GPIO_PORTQ_BASE    GPIO_PORTQ_BASE
 
 /*! uart   Global UART handler for UART reading/writing */
 UART_Handle uart;
 /*! ready_for_data   Global 8 bit variable for signalling that the copter is ready for receiving data */
 uint8_t bluetooth_ready = 0;
 
-
 void send_data(char *data, size_t size)
 {
     GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_4, GPIO_PIN_4);
     while(GPIOPinRead(GPIO_PORTP_BASE, GPIO_PIN_5) != 0x00);
-
-    //TODO: check return value
-
     UART_write(uart, data, size);
     while(UARTBusy(UART6_BASE));
-
     GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_4, 0);
+}
+
+void send_controls(uint16_t roll, uint16_t pitch, uint16_t throttle, bool armed)
+{
+    uint16_t azimuth = 1500; //needed?
+    uint8_t payload_size = 16;
+
+    char payload[payload_size];
+    payload[0] = 0x24; // $
+    payload[1] = 0x4D; // M
+    payload[2] = 0x3C; // >
+    payload[3] = 0x0A; // size of data
+    payload[4] = 0xC8; // cmd (200 for setting RC)
+
+    payload[5] = pitch;
+    payload[6] = (pitch>>8);
+    payload[7] = roll;
+    payload[8] = (roll>>8);
+    payload[9] = throttle;
+    payload[10] = (throttle>>8);
+    payload[11] = azimuth;
+    payload[12] = (azimuth>>8);
+    payload[13] = armed ? 0xd0 : 0xe8;
+    payload[14] = armed ? 0x07 : 0x03;
+
+    char checksum = 0;
+    int i;
+    for (i = 3; i < 15; i++)
+    {
+        checksum ^= payload[i];
+    }
+    payload[15] = checksum;
+
+    send_data(payload, sizeof(payload));
 }
 
 void send_command(char *cmd, uint8_t cmdSize, uint8_t returnSize, char *returnVal)
