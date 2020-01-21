@@ -54,9 +54,8 @@ void send_data(char *data, size_t size)
 void send_controls(uint16_t roll, uint16_t pitch, uint16_t throttle, bool armed)
 {
     uint16_t azimuth = 1500; //needed?
-    uint8_t payload_size = 16;
 
-    char payload[payload_size];
+    char payload[16];
     payload[0] = 0x24; // $
     payload[1] = 0x4D; // M
     payload[2] = 0x3C; // >

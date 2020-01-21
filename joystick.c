@@ -27,9 +27,9 @@
 #include <xdc/runtime/Error.h>
 #include <xdc/runtime/Memory.h>
 #include "inc/hw_memmap.h"
-#include "driverlib/gpio.h"
+//#include "driverlib/gpio.h"
 
-#include <ti/sysbios/knl/Event.h>
+//#include <ti/sysbios/knl/Event.h>
 #include <ti/drivers/GPIO.h>
 //#include <driverlib/sysctl.h>
 #include <Board.h>
