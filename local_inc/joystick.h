@@ -45,7 +45,7 @@
 /**\fn
  * ------------------------------------------------------------- functions --
  * */
-extern void EdM_ADC_Init(void);
+extern void setup_ADC_edumkII(void);
 extern void setUpJoyStick_Task();
 
 #endif /* LOCAL_INC_JOYSTICK_H_ */

@@ -31,7 +31,7 @@
 
 #include <ti/sysbios/knl/Event.h>
 #include <ti/drivers/GPIO.h>
-#include <driverlib/sysctl.h>
+//#include <driverlib/sysctl.h>
 #include <Board.h>
 
 static Bool isArmed = false;
@@ -93,7 +93,7 @@ void throttleDown(unsigned int index)
  *@param       void    nothing
  *@result
  * */
-void EdM_ADC_Init(void)
+void setup_ADC_edumkII(void)
 {
 
     GPIO_setCallback(JS_ARM, setArm);
@@ -153,12 +153,10 @@ void setUpJoyStick_Task(void)
 
 /*!
  * @brief      This is the joystick RTOS task, also used
- *              for processing Joystick and accelerometer data. The ADC values needs to be
- *              processed to limit input signal to the upper and lower saturation values.
- *              set_flight_controls is then called to get data to the quadcopter by
- *              sending payload to the quadcopter via the send_pac function
+ *             for processing joystick and button data. Scale and limit ADC values to range of 1000-2000.
+ *             send roll,pitch,throttle,isArmed to
  *
- *@param       arg0   xdc argument to the RTOS task.
+ *@param       arg0   xdc argument for the RTOS task.
  *
  * PNB:
  *
@@ -226,8 +224,8 @@ void joystick_fnx(UArg arg0 )
             pitch = 2000;
         }
 
-        //System_printf("Joystick X-Axis: %u Y-Axis: %u\n",roll,pitch);
-        //System_flush();
+        System_printf("Joystick X-Axis: %u Y-Axis: %u\n",roll,pitch);
+        System_flush();
 
         send_controls(roll,pitch,throttle,isArmed);
     }

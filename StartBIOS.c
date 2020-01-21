@@ -3,6 +3,7 @@
  */
 #include <stdbool.h>
 #include <stdint.h>
+#include <inc/hw_memmap.h>
 
 /* XDCtools Header files */
 #include <xdc/std.h>
@@ -15,40 +16,17 @@
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Event.h>
 #include <ti/sysbios/knl/Semaphore.h>
-
-/* Board Header files */
-#include <Board.h>
-#include <EK_TM4C1294XL.h>
-
-#include <stdbool.h>
-#include <stdint.h>
-#include <inc/hw_memmap.h>
-
-/* XDCtools Header files */
-#include <xdc/std.h>
-#include <xdc/cfg/global.h>
-#include <xdc/runtime/System.h>
-#include <xdc/runtime/Error.h>
-#include <xdc/runtime/Memory.h>
-
-/* BIOS Header files */
-#include <ti/sysbios/BIOS.h>
+#include <ti/sysbios/knl/Clock.h>
 #include <ti/sysbios/knl/Task.h>
 
 /* Driverlib headers */
 #include <driverlib/gpio.h>
+#include <driverlib/sysctl.h>
+#include <driverlib/rom.h>
 
 /* Board Header files */
 #include <Board.h>
 #include <EK_TM4C1294XL.h>
-
-/* Clocks and Events */
-#include <ti/sysbios/knl/Clock.h>
-#include <ti/sysbios/knl/Event.h>
-
-//driverlib
-#include <driverlib/sysctl.h>
-#include <driverlib/rom.h>
 
 #include <bluetooth.h>
 #include <joystick.h>
@@ -74,7 +52,7 @@ int main(void)
 
     setup_UART();
 
-    EdM_ADC_Init();
+    setup_ADC_edumkII();
     System_printf("Setting up ADC for Joystick Done\n");
     System_flush();
 
@@ -84,7 +62,7 @@ int main(void)
 
 
 
-    //SysMin will only print to the console upon calling flush or exit8*
+    //SysMin will only print to the console upon calling flush or exit
     //Start BIOS
     BIOS_start();
     System_printf("Start BIOS\n");
