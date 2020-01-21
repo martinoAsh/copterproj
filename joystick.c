@@ -167,12 +167,12 @@ void setUpJoyStick_Task(void)
 void joystick_fnx(UArg arg0 )
 {
     uint32_t adcSamples[2];
-    static uint32_t ui32offsetroll = 0;
-    static uint32_t ui32offsetpitch = 0;
+    static int16_t offsetRoll = 0;
+    static int16_t offsetPitch = 0;
 
     throttle = 1000;
-    static uint32_t roll = 1500;
-    static uint32_t pitch = 1500;
+    static uint16_t roll = 1500;
+    static uint16_t pitch = 1500;
 
     ADCIntClear(ADC0_BASE, 1);
     ADCProcessorTrigger(ADC0_BASE, 1);
@@ -181,8 +181,14 @@ void joystick_fnx(UArg arg0 )
     }
     ADCSequenceDataGet(ADC0_BASE, 1, adcSamples);
 
-    ui32offsetroll = adcSamples[0] - 2000;
-    ui32offsetpitch = adcSamples[1] - 2000;
+    //System_printf("Joystick X: %u Joystick Y: %u\n", adcSamples[0],adcSamples[1]);
+    //System_flush();
+
+    offsetRoll = 2000 - adcSamples[0];
+    offsetPitch = 2000 - adcSamples[1];
+
+    //System_printf("offset Joystick X: %i offset Joystick Y: %i\n", offsetRoll,offsetPitch);
+    //System_flush();
 
     while (1)
     {
@@ -197,31 +203,32 @@ void joystick_fnx(UArg arg0 )
         {
         }
         ADCSequenceDataGet(ADC0_BASE, 1, adcSamples);
-/*
-        if((adcSamples[0] - 500 + ui32offsetroll) > 0)
+
+        roll = (adcSamples[0] + offsetRoll) / 4  + 1000;
+
+        if(roll < 1000)
         {
-        ui32roll = (adcSamples[0] - 500 + ui32offsetroll);
+            roll = 1000;
         }
-        else
+        if(roll > 2000)
         {
-            ui32roll = 1000;
-        }
-        if((adcSamples[1] - 500 + ui32offsetpitch) > 0)
-        {
-        ui32pitch = (adcSamples[1] - 500 + ui32offsetpitch);
-        }
-        else
-        {
-            ui32pitch = 1000;
+            roll = 2000;
         }
 
-        if(ui32roll > 2000){ui32roll = 2000;}
+        pitch = (adcSamples[1] + offsetPitch) / 4  + 1000;
 
-        if(ui32pitch > 2000){ui32pitch = 2000;}
+        if(pitch < 1000)
+        {
+            pitch = 1000;
+        }
+        if(pitch > 2000)
+        {
+            pitch = 2000;
+        }
 
-        System_printf("Joystick X-Axis: %u Y-Axis: %u\n",ui32roll,ui32pitch);
-        System_flush();
-*/
+        //System_printf("Joystick X-Axis: %u Y-Axis: %u\n",roll,pitch);
+        //System_flush();
+
         send_controls(roll,pitch,throttle,isArmed);
     }
 }
