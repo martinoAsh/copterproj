@@ -52,7 +52,7 @@ void setArm(unsigned int index)
 
 void throttleUp(unsigned int index)
 {
-    throttle = throttle + 10;
+    throttle = throttle + 25;
     if(throttle > 2000)
     {
         throttle = 2000;
@@ -62,7 +62,7 @@ void throttleUp(unsigned int index)
 void throttleDown(unsigned int index)
 {
 
-    throttle = throttle - 10;
+    throttle = throttle - 25;
     if(throttle < 1000)
     {
         throttle = 1000;
