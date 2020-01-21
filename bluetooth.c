@@ -53,13 +53,13 @@ void send_data(char *data, size_t size)
 
 void send_controls(uint16_t roll, uint16_t pitch, uint16_t throttle, bool armed)
 {
-    uint16_t azimuth = 1500; //needed?
+    uint16_t spin = 1500; //currently not possible to control the spin (leave at default: 1500)
 
     char payload[16];
     payload[0] = 0x24; // $
     payload[1] = 0x4D; // M
     payload[2] = 0x3C; // >
-    payload[3] = 0x0A; // size of data
+    payload[3] = 0x0A; // size of data = 10
     payload[4] = 0xC8; // cmd (200 for setting RC)
 
     payload[5] = pitch;
@@ -68,8 +68,8 @@ void send_controls(uint16_t roll, uint16_t pitch, uint16_t throttle, bool armed)
     payload[8] = (roll>>8);
     payload[9] = throttle;
     payload[10] = (throttle>>8);
-    payload[11] = azimuth;
-    payload[12] = (azimuth>>8);
+    payload[11] = spin;
+    payload[12] = (spin>>8);
     payload[13] = armed ? 0xd0 : 0xe8;
     payload[14] = armed ? 0x07 : 0x03;
 
