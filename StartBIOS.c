@@ -60,8 +60,6 @@ int main(void)
     System_printf("Set up Joystick Task\n");
     System_flush();
 
-
-
     //SysMin will only print to the console upon calling flush or exit
     //Start BIOS
     BIOS_start();
